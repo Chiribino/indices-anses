@@ -1,0 +1,57 @@
+"persons": [
+        {
+            "id": "p-001",
+            "dni": "20123456",
+            "nombre": "Juan",
+            "apellido": "Pérez",
+            "fechaNacimiento": "1965-04-12",
+            "sexo": "M",
+            "regimen": "general",
+            "aportes": [
+                {"desde": "01/1990", "hasta": "12/1999", "tipo": "dependencia"},
+                {"desde": "01/2000", "hasta": "06/2007", "tipo": "dependencia"},
+                {"desde": "07/2007", "hasta": "12/2015", "tipo": "monotributo"}
+            ],
+            "remuneraciones": {
+                "01/2000": 850.50,
+                "02/2000": 870.00,
+                "03/2000": 900.25,
+                "01/2007": 2100.00,
+                "02/2007": 2150.75,
+                "07/2007": 1800.00
+            }
+        },
+        {
+            "id": "p-002",
+            "dni": "27111222",
+            "nombre": "María",
+            "apellido": "Gómez",
+            "fechaNacimiento": "1970-09-30",
+            "sexo": "F",
+            "regimen": "general",
+            "aportes": [
+                {"desde": "03/1995", "hasta": "12/2001", "tipo": "dependencia"},
+                {"desde": "01/2002", "hasta": "12/2006", "tipo": "autonomo"},
+                {"desde": "01/2007", "hasta": "12/2020", "tipo": "dependencia"}
+            ],
+            "remuneraciones": {
+                "03/1995": 620.00,
+                "04/1995": 640.00,
+                "01/2002": 1500.00,
+                "01/2007": 2600.00,
+                "01/2015": 9800.00
+            }
+        }
+    ],
+    "indices": {
+        "ripte": {
+            "01/2000": 1.12,
+            "01/2007": 2.35,
+            "01/2015": 8.90
+        },
+        "ipc": {
+            "01/2000": 0.98,
+            "01/2007": 1.75,
+            "01/2015": 9.40
+        }
+    }
