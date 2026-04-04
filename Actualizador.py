@@ -42,7 +42,8 @@ def leer_archivo_indices(archivo='indices.json'):
         'bases_minimas': datos['bases_minimas'],
         'bases_maximas': datos['bases_maximas'],
         'coeficientes_de_actualizacion': datos['coeficientes_de_actualizacion'],
-        'movilidad': datos['movilidad']
+        'movilidad': datos['movilidad'],
+        'monotributo_promovido': datos.get('monotributo_promovido', None),
     }
 
 
@@ -123,6 +124,17 @@ def actualizar_indices(archivo='indices.json'):
         else:
             print(
                 f"\nCOEFICIENTES_DE_ACTUALIZACION: Ya existe para {siguiente_mes}")
+            
+        valor_actual_mono = diccionarios.get('monotributo_promovido', 'no definido')
+        nuevo_mono = input(f"\nMonotributo promovido actual: {valor_actual_mono}\nIngrese nuevo monto (o Enter para mantener): ").strip()
+        if nuevo_mono:
+            try:
+                diccionarios['monotributo_promovido'] = float(nuevo_mono)
+                print(f"MONOTRIBUTO_PROMOVIDO: {nuevo_mono}")
+            except ValueError:
+                print("Valor inválido, se conserva el monto anterior.")
+        else:
+            print("MONOTRIBUTO_PROMOVIDO: sin cambios")
 
         print("="*50)
         escribir_archivo_indices(diccionarios, archivo)
@@ -197,7 +209,7 @@ def chequear_data():
 
 
 if __name__ == "__main__":
-    # En caso de querer utilizar un archivo de prueba poner de argumento en la funcion actualizar_indices un string con el nombre del archivo, pj 'indices-copia.json' #
+    # En caso de querer utilizar un archivo de prueba poner de argumento en la funcion actualizar_indices un string con el nombre del archivo, pj '.indices-copia.json' #
     actualizar_indices()
 
     # chequear_data()
