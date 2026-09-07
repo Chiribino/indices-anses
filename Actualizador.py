@@ -39,17 +39,32 @@ def leer_archivo_indices(archivo='indices.json'):
         'pbus': datos['pbus'],
         'haberes_minimos': datos['haberes_minimos'],
         'haberes_maximos': datos['haberes_maximos'],
-        'bases_minimas': datos['bases_minimas'],
         'bases_maximas': datos['bases_maximas'],
         'coeficientes_de_actualizacion': datos['coeficientes_de_actualizacion'],
         'movilidad': datos['movilidad'],
         'monotributo_promovido': datos.get('monotributo_promovido', None),
+        'ucap': datos.get('ucap', None),
+        'rentas_de_referencia': datos.get('rentas_de_referencia', {}),
+        'bonos': datos.get('bonos', {}),
     }
 
 
 def escribir_archivo_indices(diccionarios, archivo='indices.json'):
+    orden_claves = [
+        'pbus', 'haberes_minimos', 'haberes_maximos', 'bases_maximas',
+        'coeficientes_de_actualizacion', 'movilidad',
+        'rentas_de_referencia', 'bonos',
+        'monotributo_promovido', 'ucap'
+    ]
+    datos_ordenados = {}
+    for clave in orden_claves:
+        if clave in diccionarios:
+            datos_ordenados[clave] = diccionarios[clave]
+    for clave in diccionarios:
+        if clave not in datos_ordenados:
+            datos_ordenados[clave] = diccionarios[clave]
     with open(archivo, 'w', encoding='utf-8') as f:
-        json.dump(diccionarios, f, ensure_ascii=False, indent=2)
+        json.dump(datos_ordenados, f, ensure_ascii=False, indent=2)
 
 
 def actualizar_indices(archivo='indices.json'):
@@ -72,36 +87,111 @@ def actualizar_indices(archivo='indices.json'):
         print(f"\nAplicando índice de actualización: {indice}")
         print("="*50)
 
-        for nombre_dict in ['pbus', 'haberes_minimos', 'haberes_maximos', 'bases_minimas', 'bases_maximas']:
+        for nombre_dict in ['pbus', 'haberes_minimos', 'haberes_maximos', 'bases_maximas']:
             valor_anterior = diccionarios[nombre_dict][ultimo_mes]
             nuevo_valor = round(valor_anterior * indice, 2)
             diccionarios[nombre_dict][siguiente_mes] = nuevo_valor
             print(f"{nombre_dict.upper()}: {nuevo_valor}")
 
-        diccionarios['rentas_de_referencia'] = {"A": 14.010264963437562,
-                                                "B": 17.19884290019494,
-                                                "B2": 18.81123349912165,
-                                                "C": 25.146357885316064,
-                                                "D": 34.39688507561582,
-                                                "D2": 37.621590795314305,
-                                                "E": 57.4336121222905,
-                                                "E2": 62.81801038730368,
-                                                "F": 80.33573208379138,
-                                                "G": 114.82301701740326,
-                                                "G2": 125.58767537554402,
-                                                "H": 172.30211949550534,
-                                                "I (ex)": 215.5464062175885,
-                                                "J": 215.5464062175885,
-                                                "I2": 19.646543676435257,
-                                                "II2": 27.504738469341742,
-                                                "III2": 39.292746060343866,
-                                                "IV2": 62.86836416161999,
-                                                "V2": 86.44365737866403,
-                                                "I": 17.96255384340836,
-                                                "II": 25.147188145020316,
-                                                "III": 35.92479592922026,
-                                                "IV": 57.47964723348114,
-                                                "V": 79.0341999067812}
+        print("-"*50)
+
+        valor_actual_ucap = diccionarios.get('ucap', 0)
+        nuevo_ucap = round(valor_actual_ucap * indice, 2)
+        print(f"UCAP calculado: {nuevo_ucap}")
+        respuesta_ucap = input("¿Es correcto el UCAP? (Enter = aceptar, o ingrese nuevo valor): ").strip()
+        if respuesta_ucap:
+            try:
+                nuevo_ucap = float(respuesta_ucap)
+                print(f"UCAP modificado: {nuevo_ucap}")
+            except ValueError:
+                print("Valor inválido, se conserva el calculado.")
+        diccionarios['ucap'] = nuevo_ucap
+
+        print("-"*50)
+        print("RENTAS DE REFERENCIA")
+        print("="*50)
+
+        categorias_con_divisor = [
+            'A', 'B', 'B2', 'C', 'C2', 'D', 'D2', 'E', 'E2', 'F',
+            'G', 'G2', 'H', 'I (ex)', 'J', 'I2', 'II2', 'III2', 'IV2', 'V2'
+        ]
+        categorias_sin_divisor = ['I', 'II', 'III', 'IV', 'V']
+        orden_rentas = categorias_sin_divisor + categorias_con_divisor
+
+        rentas_nuevas = {}
+        for cat in orden_rentas:
+            if cat not in diccionarios['rentas_de_referencia']:
+                continue
+            serie = diccionarios['rentas_de_referencia'][cat]
+            ultimo_fecha_renta = obtener_ultimo_mes(serie)
+            ultimo_valor_renta = serie[ultimo_fecha_renta]
+            nuevo_valor_renta = round(ultimo_valor_renta * indice, 2)
+
+            if cat in categorias_con_divisor:
+                valor_para_mostrar = round(nuevo_valor_renta * 0.32, 2)
+                rentas_nuevas[cat] = {
+                    'valor_real': nuevo_valor_renta,
+                    'valor_mostrar': valor_para_mostrar,
+                    'con_divisor': True
+                }
+            else:
+                rentas_nuevas[cat] = {
+                    'valor_real': nuevo_valor_renta,
+                    'valor_mostrar': nuevo_valor_renta,
+                    'con_divisor': False
+                }
+
+        print("\nCategorías I-V (valor tal cual):")
+        for cat in categorias_sin_divisor:
+            if cat in rentas_nuevas:
+                print(f"  {cat:>5}: {rentas_nuevas[cat]['valor_mostrar']:>15.2f}")
+
+        print("\nCategorías con factor 0.32 (valor mostrado / real entre paréntesis):")
+        for cat in categorias_con_divisor:
+            if cat in rentas_nuevas:
+                r = rentas_nuevas[cat]
+                print(f"  {cat:>8}: {r['valor_mostrar']:>15.2f}  (real: {r['valor_real']:>15.2f})")
+
+        print("\n" + "="*50)
+        respuesta_rentas = input("¿Los datos de rentas de referencia son correctos? (s/n): ").strip().lower()
+
+        if respuesta_rentas == 'n':
+            print("\nMODO EDICIÓN - Ingrese los nuevos valores (Enter para mantener el calculado):")
+            print("(Para categorías con factor 0.32, ingrese el valor mostrado)")
+            print("-"*50)
+
+            for cat in orden_rentas:
+                if cat not in rentas_nuevas:
+                    continue
+                r = rentas_nuevas[cat]
+                if r['con_divisor']:
+                    prompt = f"  {cat} (mostrado: {r['valor_mostrar']:.2f}): "
+                else:
+                    prompt = f"  {cat} (calculado: {r['valor_mostrar']:.2f}): "
+
+                respuesta = input(prompt).strip()
+                if respuesta:
+                    try:
+                        valor_editado = float(respuesta)
+                        if r['con_divisor']:
+                            rentas_nuevas[cat]['valor_real'] = round(valor_editado / 0.32, 2)
+                            rentas_nuevas[cat]['valor_mostrar'] = valor_editado
+                        else:
+                            rentas_nuevas[cat]['valor_real'] = valor_editado
+                            rentas_nuevas[cat]['valor_mostrar'] = valor_editado
+                    except ValueError:
+                        print(f"    Valor inválido, se mantiene el calculado.")
+
+            print("\nValores finales guardados:")
+            for cat in orden_rentas:
+                if cat in rentas_nuevas:
+                    r = rentas_nuevas[cat]
+                    print(f"  {cat:>8}: {r['valor_real']:>15.2f}")
+
+        for cat in rentas_nuevas:
+            if cat not in diccionarios['rentas_de_referencia']:
+                diccionarios['rentas_de_referencia'][cat] = {}
+            diccionarios['rentas_de_referencia'][cat][siguiente_mes] = rentas_nuevas[cat]['valor_real']
 
         diccionarios['movilidad'][siguiente_mes] = round((indice-1)*100, 2)
 
@@ -124,7 +214,7 @@ def actualizar_indices(archivo='indices.json'):
         else:
             print(
                 f"\nCOEFICIENTES_DE_ACTUALIZACION: Ya existe para {siguiente_mes}")
-            
+
         valor_actual_mono = diccionarios.get('monotributo_promovido', 'no definido')
         nuevo_mono = input(f"\nMonotributo promovido actual: {valor_actual_mono}\nIngrese nuevo monto (o Enter para mantener): ").strip()
         if nuevo_mono:
@@ -174,10 +264,10 @@ def chequear_data():
         print(greatKey)
         fechas = []
         importes = []
-        if j == 5:
+        if j == 4:
             j += 1
             continue
-        if j == 6:
+        if j == 5:
             for k, v in indice.items():
                 print(k)
                 fechas_renta = []
@@ -194,6 +284,9 @@ def chequear_data():
                         print(k, " => ", ok, "!= ", importes_renta[h])
                     h += 1
             break
+        if j >= 6:
+            j += 1
+            continue
         for key, value in indice.items():
             importes.append(value)
             fechas.append(key[3:]+key[:2])
